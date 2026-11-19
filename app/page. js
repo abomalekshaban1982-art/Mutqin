@@ -1,0 +1,81 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+
+export default function Home() {
+  const [surahs, setSurahs] = useState([])
+  const [currentSurah, setCurrentSurah] = useState(null)
+  const [ayahs, setAyahs] = useState([])
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from('surahs').select('*').order('order_index')
+      setSurahs(data || [])
+      if (data?.length) loadAyahs(data[0].id)
+    }
+    load()
+  }, [])
+
+  async function loadAyahs(surahId) {
+    const { data } = await supabase.from('ayahs').select('*').eq('surah_id', surahId).order('ayah_number')
+    setAyahs(data || [])
+    setCurrentSurah(surahId)
+  }
+
+  async function rateAyah(ayahId, difficulty) {
+    let days = 1
+    if (difficulty === 'medium') days = 3
+    if (difficulty === 'easy') days = 7
+    alert('تم الحفظ! هنراجع الآية دي بعد ' + days + ' أيام')
+  }
+
+  return (
+    <div style={{ direction: 'rtl', fontFamily: 'sans-serif', maxWidth: '500px', margin: '0 auto', padding: '20px', background: '#F7F3E9', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h2>السلام عليكم 🌹</h2>
+        <span style={{ background: '#0B3D2E', color: 'white', padding: '5px 12px', borderRadius: '20px' }}>🔥 14 يوم</span>
+      </div>
+      <div style={{ background: '#0B3D2E', color: 'white', padding: '20px', borderRadius: '20px', marginTop: '20px' }}>
+        <p>واجب اليوم</p>
+        <h3>5 آيات جديدة + 12 مراجعة</h3>
+        <p>أنجزت 30% من اليوم</p>
+      </div>
+      <h3 style={{ marginTop: '25px' }}>رحلتك في جزء عمّ</h3>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        {surahs.map(s => (
+          <button key={s.id} onClick={() => loadAyahs(s.id)} style={{ padding: '12px 16px', borderRadius: '15px', background: currentSurah === s.id ? '#0B3D2E' : 'white', color: currentSurah === s.id ? 'white' : '#0B3D2E', cursor: 'pointer', fontWeight: 'bold' }}>
+            {s.name_ar}
+          </button>
+        ))}
+      </div>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '20px', marginTop: '20px' }}>
+        <h3 style={{ textAlign: 'center' }}>سورة {surahs.find(s => s.id === currentSurah)?.name_ar}</h3>
+        <p style={{ textAlign: 'center', fontSize: '14px', color: '#666' }}>{surahs.find(s => s.id === currentSurah)?.story}</p>
+        {ayahs.map(a => (
+          <div key={a.id} style={{ borderBottom: '1px solid #eee', padding: '15px 0' }}>
+            <p style={{ fontSize: '28px', textAlign: 'center', lineHeight: '2' }}>{a.text_ar}</p>
+            <p style={{ textAlign: 'center', fontSize: '13px', color: '#C9A86A' }}>{a.hard_word}: {a.hard_word_meaning}</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <audio controls src={a.audio_url} style={{ width: '200px', height: '35px' }}></audio>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
+              <button onClick={() => rateAyah(a.id, 'hard')} style={{ background: '#ffebee', border: 'none', padding: '8px 12px', borderRadius: '10px' }}>😟 صعبة</button>
+              <button onClick={() => rateAyah(a.id, 'medium')} style={{ background: '#fff3e0', border: 'none', padding: '8px 12px', borderRadius: '10px' }}>😐 متوسطة</button>
+              <button onClick={() => rateAyah(a.id, 'easy')} style={{ background: '#e8f5e9', border: 'none', padding: '8px 12px', borderRadius: '10px' }}>😊 سهلة</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: '#0B3D2E', color: 'white', padding: '20px', borderRadius: '20px', marginTop: '20px', textAlign: 'center' }}>
+        <h3>🎮 لعبة اليوم: أكمل الفراغ</h3>
+        <p style={{ fontSize: '24px' }}>قُلْ أَعُوذُ بِرَبِّ .....</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button onClick={() => alert('أحسنت! +10 نقاط 🎉')} style={{ background: '#C9A86A', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold' }}>النَّاسِ</button>
+          <button onClick={() => alert('حاول تاني')} style={{ background: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px' }}>الفَلَقِ</button>
+          <button onClick={() => alert('حاول تاني')} style={{ background: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px' }}>الجِنَّةِ</button>
+        </div>
+      </div>
+      <p style={{ textAlign: 'center', fontSize: '12px', color: '#888', marginTop: '20px' }}>مُتقِن V1.0 - النسخة المجانية</p>
+    </div>
+  )
+}
